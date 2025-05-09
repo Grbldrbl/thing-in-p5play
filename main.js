@@ -1,5 +1,6 @@
 let squares = [];
 let center;
+let centerRadius = 25; // Radius of the central circle
 let gravityStrength = 2;
 let draggedSquare = null; // To track the square being dragged
 
@@ -22,7 +23,7 @@ function draw() {
   // Draw the central circle
   fill(100, 100, 255);
   noStroke();
-  ellipse(center.x, center.y, 50, 50);
+  ellipse(center.x, center.y, centerRadius * 2, centerRadius * 2);
 
   // Update and draw squares
   for (let i = 0; i < squares.length; i++) {
@@ -30,6 +31,7 @@ function draw() {
 
     if (!square.isDragging) {
       square.applyGravity(center);
+      square.checkCollisionWithCircle(center, centerRadius); // Check collision with the circle
     }
 
     // Check for collisions with other squares
@@ -50,7 +52,7 @@ class Square {
     this.velocity = createVector(random(-2, 2), random(-2, 2));
     this.acceleration = createVector(0, 0);
     this.mass = random(1, 3); // Mass affects gravity
-    this.size = 40; // Increased size
+    this.size = 40; // Size of the square
     this.isDragging = false; // Dragging state
     this.offsetX = 0; // Offset for dragging
     this.offsetY = 0;
@@ -123,6 +125,18 @@ class Square {
       let temp = this.velocity.copy();
       this.velocity = other.velocity;
       other.velocity = temp;
+    }
+  }
+
+  // Check for collision with the central circle
+  checkCollisionWithCircle(circleCenter, circleRadius) {
+    let distance = dist(this.position.x, this.position.y, circleCenter.x, circleCenter.y);
+    let combinedRadius = circleRadius + this.size / 2;
+
+    if (distance < combinedRadius) {
+      // Resolve collision by reversing the velocity
+      let collisionNormal = p5.Vector.sub(this.position, circleCenter).normalize();
+      this.velocity = p5.Vector.mult(collisionNormal, this.velocity.mag());
     }
   }
 }
