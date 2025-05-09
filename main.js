@@ -1,6 +1,7 @@
 let squares = [];
 let center;
 let gravityStrength = 2;
+let draggedSquare = null; // To track the square being dragged
 
 function setup() {
   createCanvas(800, 800);
@@ -25,7 +26,9 @@ function draw() {
 
   // Update and draw squares
   for (let square of squares) {
-    square.applyGravity(center);
+    if (!square.isDragging) {
+      square.applyGravity(center);
+    }
     square.update();
     square.display();
   }
@@ -38,7 +41,10 @@ class Square {
     this.velocity = createVector(0, 0);
     this.acceleration = createVector(0, 0);
     this.mass = random(1, 3); // Mass affects gravity
-    this.size = 20;
+    this.size = 40; // Increased size
+    this.isDragging = false; // Dragging state
+    this.offsetX = 0; // Offset for dragging
+    this.offsetY = 0;
   }
 
   applyGravity(target) {
@@ -51,20 +57,72 @@ class Square {
   }
 
   update() {
-    this.velocity.add(this.acceleration);
-    this.position.add(this.velocity);
-    this.acceleration.mult(0); // Reset acceleration
+    if (!this.isDragging) {
+      this.velocity.add(this.acceleration);
+      this.position.add(this.velocity);
+      this.acceleration.mult(0); // Reset acceleration
+    }
   }
 
   display() {
+    stroke(0); // Outline color
+    strokeWeight(2); // Outline thickness
     fill(255, 100, 100);
     rectMode(CENTER);
     rect(this.position.x, this.position.y, this.size, this.size);
   }
+
+  // Check if the mouse is over the square
+  isMouseOver() {
+    return (
+      mouseX > this.position.x - this.size / 2 &&
+      mouseX < this.position.x + this.size / 2 &&
+      mouseY > this.position.y - this.size / 2 &&
+      mouseY < this.position.y + this.size / 2
+    );
+  }
+
+  // Start dragging
+  startDragging() {
+    this.isDragging = true;
+    this.offsetX = this.position.x - mouseX;
+    this.offsetY = this.position.y - mouseY;
+  }
+
+  // Stop dragging
+  stopDragging() {
+    this.isDragging = false;
+  }
+
+  // Dragging logic
+  drag() {
+    if (this.isDragging) {
+      this.position.x = mouseX + this.offsetX;
+      this.position.y = mouseY + this.offsetY;
+    }
+  }
 }
 
+// Mouse events
 function mousePressed() {
-  // Add a new square where the mouse is clicked
-  let square = new Square(mouseX, mouseY);
-  squares.push(square);
+  for (let square of squares) {
+    if (square.isMouseOver()) {
+      square.startDragging();
+      draggedSquare = square;
+      break;
+    }
+  }
+}
+
+function mouseReleased() {
+  if (draggedSquare) {
+    draggedSquare.stopDragging();
+    draggedSquare = null;
+  }
+}
+
+function mouseDragged() {
+  if (draggedSquare) {
+    draggedSquare.drag();
+  }
 }
