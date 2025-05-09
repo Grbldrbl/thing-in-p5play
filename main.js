@@ -25,10 +25,19 @@ function draw() {
   ellipse(center.x, center.y, 50, 50);
 
   // Update and draw squares
-  for (let square of squares) {
+  for (let i = 0; i < squares.length; i++) {
+    let square = squares[i];
+
     if (!square.isDragging) {
       square.applyGravity(center);
     }
+
+    // Check for collisions with other squares
+    for (let j = i + 1; j < squares.length; j++) {
+      let other = squares[j];
+      square.checkCollision(other);
+    }
+
     square.update();
     square.display();
   }
@@ -38,7 +47,7 @@ function draw() {
 class Square {
   constructor(x, y) {
     this.position = createVector(x, y);
-    this.velocity = createVector(0, 0);
+    this.velocity = createVector(random(-2, 2), random(-2, 2));
     this.acceleration = createVector(0, 0);
     this.mass = random(1, 3); // Mass affects gravity
     this.size = 40; // Increased size
@@ -48,10 +57,10 @@ class Square {
   }
 
   applyGravity(target) {
-    let force = p5.Vector.sub(target, this.position); // Direction vector
-    let distance = constrain(force.mag(), 5, 25); // Distance between square and circle
+    let force = p5.Vector.sub(target, this.position);
+    let distance = constrain(force.mag(), 5, 25);
     force.normalize();
-    let strength = (gravityStrength * this.mass) / (distance * distance); // Gravitational force
+    let strength = (gravityStrength * this.mass) / (distance * distance);
     force.mult(strength);
     this.acceleration.add(force);
   }
@@ -99,6 +108,21 @@ class Square {
     if (this.isDragging) {
       this.position.x = mouseX + this.offsetX;
       this.position.y = mouseY + this.offsetY;
+    }
+  }
+
+  // Check for collision with another square
+  checkCollision(other) {
+    let dx = abs(this.position.x - other.position.x);
+    let dy = abs(this.position.y - other.position.y);
+    let combinedHalfSize = this.size / 2 + other.size / 2;
+
+    // Check if the squares overlap
+    if (dx < combinedHalfSize && dy < combinedHalfSize) {
+      // Resolve collision by swapping velocities
+      let temp = this.velocity.copy();
+      this.velocity = other.velocity;
+      other.velocity = temp;
     }
   }
 }
